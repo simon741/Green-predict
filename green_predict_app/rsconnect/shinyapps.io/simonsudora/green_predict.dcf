@@ -1,0 +1,9 @@
+name: green_predict
+account: simonsudora
+server: shinyapps.io
+appId: 93171
+bundleId: 440071
+url: https://simonsudora.shinyapps.io/green_predict/
+when: 1462233868.84526
+asMultiple: FALSE
+asStatic: FALSE

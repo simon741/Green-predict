@@ -5,7 +5,6 @@ library(cvTools)
 library(ggvis)
 
 day.error.vis <- function(result){
-  #add caption to graph
   result <- data.frame(result, Dif = abs(result$Target - result$Prediction))
   result <- mutate(result, order = seq(1,dim(result)[1],1))
   
@@ -19,30 +18,32 @@ day.error.vis <- function(result){
 }
 
 
-rsns.crossval.hour <- function(conf, inputs.hour, targets.hour, folds){
+rsns.crossval <- function(conf, inputs.hour, targets.hour, folds){
   
-  validation.errors <- data.frame()
-  train.errors <- data.frame()
-  for(i in 1:folds$K){
-    
+    validation.errors <- data.frame()
+    train.errors <- data.frame()
+    for(i in 1:folds$K){
+      
     inputs.train <- inputs.hour[folds$which != i,conf$predictors]
     inputs.validation <- inputs.hour[folds$which == i,conf$predictors]
     targets.train <- targets.hour[folds$which != i,"Energy_kWh"]
     targets.validation <- targets.hour[folds$which == i,"Energy_kWh"]
     
     model <- mlp(inputs.train, targets.train, size = conf$size, maxit = conf$maxit,
-                 initFunc = "Randomize_Weights",# initFuncParams = conf$initFuncParams,
-                 learnFunc = "Rprop", # conf$learnFuncParams,
+                 initFunc = "Randomize_Weights",
+                 learnFunc = conf$learnFunc,
                  updateFunc = "Topological_Order", updateFuncParams = c(0),
                  hiddenActFunc = "Act_Logistic", shufflePatterns = conf$shufflePatterns,
                  linOut = T)
     
     train.predictions <- predict(model,inputs.train[,conf$predictors])
+    train.predictions[train.predictions < 0] <- 0
     train.error <- modeval(train.predictions,targets.train,
                            stat=c("MAE","RMAE","RMSE","RRMSE"))
     train.errors <- rbind(train.errors, train.error)
     
     validation.predictions <- predict(model,inputs.validation[,conf$predictors])
+    validation.predictions[validation.predictions < 0] <- 0
     validation.error <- modeval(validation.predictions,targets.validation,
                                 stat=c("MAE","RMAE","RMSE","RRMSE"))
     validation.errors <- rbind(validation.errors, validation.error)
@@ -63,10 +64,10 @@ rsns.crossval.hour <- function(conf, inputs.hour, targets.hour, folds){
   print("**********************************************")
   print("Final result:")
   print("Train set errors:")
-  print(paste("MAE: ",mean(train.error$MAE)))
-  print(paste("RMAE: ",mean(train.error$RMAE),"%"))
-  print(paste("RMSE: ",mean(train.error$RMSE)))
-  print(paste("RRMSE: ",mean(train.error$RRMSE),"%"))
+  print(paste("MAE: ",mean(train.errors$MAE)))
+  print(paste("RMAE: ",mean(train.errors$RMAE),"%"))
+  print(paste("RMSE: ",mean(train.errors$RMSE)))
+  print(paste("RRMSE: ",mean(train.errors$RRMSE),"%"))
   print("Validation set errors:")
   print(paste("MAE: ",mean(validation.errors$MAE)))
   print(paste("RMAE: ",mean(validation.errors$RMAE),"%"))
@@ -75,7 +76,7 @@ rsns.crossval.hour <- function(conf, inputs.hour, targets.hour, folds){
   return (model)
 }
 
-rsns.crossval.day <- function(conf, inputs.hour, targets.hour, targets.day, folds, targets.norm.params, vis.errors){
+rsns.crossval.sum.hours <- function(conf, inputs.hour, targets.hour, targets.day, folds, targets.norm.params, vis.errors){
   
   validation.errors <- data.frame()
   train.errors <- data.frame()
@@ -87,8 +88,8 @@ rsns.crossval.day <- function(conf, inputs.hour, targets.hour, targets.day, fold
     targets.validation <- targets.day[folds$which == i,]
     
     model <- mlp(inputs.train, targets.train, size = conf$size, maxit = conf$maxit,
-                 initFunc = "Randomize_Weights",# initFuncParams = conf$initFuncParams,
-                 learnFunc = "Rprop", # conf$learnFuncParams,
+                 initFunc = "Randomize_Weights",
+                 learnFunc = conf$learnFunc,
                  updateFunc = "Topological_Order", updateFuncParams = c(0),
                  hiddenActFunc = "Act_Logistic", shufflePatterns = conf$shufflePatterns,
                  linOut = T)
@@ -99,7 +100,7 @@ rsns.crossval.day <- function(conf, inputs.hour, targets.hour, targets.day, fold
     validation.errors <- rbind(validation.errors, validation.error)
     result <- data.frame(Time = targets.validation$Time, Target = targets.validation$Energy_kWh, Prediction = validation.predictions)
     
-    if(vis.erros == T) error.vis(result)
+    if(vis.errors == T) error.vis(result)
     
     print(paste("Crossvalidation iteration: ", i))
     print("Validation set errors:")
@@ -123,7 +124,7 @@ sum.hour.predictions <- function(target, model, inputs.test, predictors, targets
   day <- target[1]
   prediction <- predict(model,inputs.test[as.Date(inputs.test$Time) == day, predictors])
   prediction <- denormalizeData(prediction, targets.norm.params)
-  #prediction[prediction < 0] <- 0
+  prediction[prediction < 0] <- 0
   prediction <- sum(prediction)
   return (prediction)
 }
@@ -226,95 +227,105 @@ rsns.crossval2 <- function(inputs.day, inputs.hour, targets.day, targets.hour, c
 }
 
 
-test.confs <- function(num.folds,confs, output.to.file, day.error.vis){
+test.confs <- function(pv.hour, pv.day, num.folds, confs, output.to.file, day.error.vis){
   if(output.to.file == T){
     sink(file = "final_test.txt", append = TRUE, type = "output",
          split = FALSE)
   }
   
-  normalized.data <- normalize(pv3.hour, conf$predictors)
-  targets.norm.params <- normalized.data$targets.norm.params
-  inputs.hour <- normalized.data$inputs
-  inputs.hour <- cbind(inputs.hour, Time = pv3.hour$Time)
-  targets.hour <- normalized.data$targets
-  targets.hour <- cbind(targets.hour, Time = pv3.hour$Time)
-  targets.day <- pv3.day[,c("Time", "Energy_kWh")]
-  day.folds <- cvFolds(dim(targets.day)[1], K = num.folds, type = "random") #random je dolezite dat aj do testov?
-  hour.folds <- cvFolds(dim(inputs.hour)[1], K = num.folds, type = "random")
-  
   for(conf in confs){
+    normalized.data <- normalize(pv.hour, conf$predictors)
+    targets.norm.params <- normalized.data$targets.norm.params
+    inputs.hour <- normalized.data$inputs
+    inputs.hour <- cbind(inputs.hour, Time = pv.hour$Time)
+    targets.hour <- normalized.data$targets
+    targets.hour <- cbind(targets.hour, Time = pv.hour$Time)
+    targets.day <- pv.day[,c("Time", "Energy_kWh")]
+    day.folds <- cvFolds(dim(targets.day)[1], K = num.folds, type = "random")
+    hour.folds <- cvFolds(dim(inputs.hour)[1], K = num.folds, type = "random")
+    
+    
+    print(deparse(substitute(pv.hour)))
     print(conf)
     print("***************DAY*****************")
     
-    model <- rsns.crossval.day(conf, inputs.hour, targets.hour, targets.day, day.folds, targets.norm.params)
+    model <- rsns.crossval.sum.hours(conf, inputs.hour, targets.hour, targets.day, day.folds, targets.norm.params, day.error.vis)
     
     print("***************HOUR*****************")
     
-    model <- rsns.crossval.hour(conf,inputs.hour, targets.hour, hour.folds)
+    model <- rsns.crossval(conf,inputs.hour, targets.hour, hour.folds)
   } 
   
   closeAllConnections()
 }
 
-
-
-
+test.day.mean.parametres <- function(pv.day, num.folds, conf, output.to.file, day.error.vis){
+  if(output.to.file == T){
+    sink(file = "final_test.txt", append = TRUE, type = "output",
+         split = FALSE)
+  }
   
-model.pv1 <- mlp(inputs.hour[,conf$predictors], targets.hour[,"Energy_kWh"], size = conf$size, maxit = conf$maxit,
-             initFunc = "Randomize_Weights",# initFuncParams = conf$initFuncParams,
-             learnFunc = "Rprop", # conf$learnFuncParams,
-             updateFunc = "Topological_Order", updateFuncParams = c(0),
-             hiddenActFunc = "Act_Logistic", shufflePatterns = conf$shufflePatterns,
-             linOut = T)
-
-
+  normalized.data <- normalize(pv.day, conf$predictors)
+  targets.norm.params <- normalized.data$targets.norm.params
+  inputs.day <- normalized.data$inputs
+  targets.day <- normalized.data$targets
+  folds <- cvFolds(dim(inputs.day)[1], K = num.folds, type = "random")
   
+  print(deparse(substitute(pv.day)))
+  print(conf)
+  print("***************DAY*****************")
+  model <- rsns.crossval(conf,inputs.day, targets.day, folds)
+  
+  
+  closeAllConnections()
+}
+
+export.model <- function(pv.hour, pv.day, conf, pv.name){
+  predictors <- conf$predictors
+  print(conf)
+  normalized.data <- normalize(pv.hour, predictors)
+  targets.norm.params <- normalized.data$targets.norm.params
+  inputs.hour <- normalized.data$inputs
+  inputs.hour <- cbind(inputs.hour, Time = pv.hour$Time)
+  targets.hour <- normalized.data$targets
+  targets.day <- pv.day[,c("Time", "Energy_kWh")]
+    
+  model <- mlp(inputs.hour[,predictors], targets.hour$Energy_kWh, size = conf$size, maxit = conf$maxit,
+                initFunc = "Randomize_Weights",
+                learnFunc = conf$learnFunc,
+                updateFunc = "Topological_Order", updateFuncParams = c(0),
+                hiddenActFunc = "Act_Logistic", shufflePatterns = conf$shufflePatterns,
+                linOut = T)
+  
+  train.predictions.day <- apply(targets.day,1,sum.hour.predictions, model,inputs.test = inputs.hour, predictors = conf$predictors, targets.norm.params)
+  train.error.day <- modeval(train.predictions.day,targets.day$Energy_kWh,
+                              stat=c("MAE","RMAE","RMSE","RRMSE"))
+
+  train.predictions.hour <- predict(model,inputs.hour[,predictors])
+  train.predictions.hour[train.predictions.hour < 0] <- 0
+  
+  train.error.hour <- modeval(train.predictions.hour,targets.hour$Energy_kWh,
+                           stat=c("MAE","RMAE","RMSE","RRMSE"))
+    
+  print("Exported model hour error: ")
+  print(paste("MAE: ",train.error.hour$MAE))
+  print(paste("RMAE: ",train.error.hour$RMAE,"%"))
+  print(paste("RMSE: ",train.error.hour$RMSE))
+  print(paste("RRMSE: ",train.error.hour$RRMSE,"%"))
+  
+  print("Exported model day error: ")
+  print(paste("MAE: ",train.error.day$MAE))
+  print(paste("RMAE: ",train.error.day$RMAE,"%"))
+  print(paste("RMSE: ",train.error.day$RMSE))
+  print(paste("RRMSE: ",train.error.day$RRMSE,"%"))
+  
+  
+  save(list = c("model", "predictors", "targets.norm.params", "inputs.hour"),file = paste0("./green_predict_app/model_", pv.name,".RData"))
+}
+
   vis <- result %>% ggvis(x = ~Prediction, y= ~Target) %>% 
     layer_points(size = ~dif) %>% 
     layer_lines(~Target,~Target) %>%
     add_axis("x", title = "Predikovana hodnota") %>%
     add_axis("y", title = "Cielova hodnota") %>%
     add_legend("fill", title = "Chyba")
-
-  
-  result %>% ggvis(x = ~order, y = ~Target) %>% 
-    layer_points() %>%
-    layer_lines(x = ~order,y = ~Prediction, stroke := "red")
-  
-  result %>% ggvis(x = ~Time, y = ~Target) %>% 
-    layer_points() %>%
-    layer_lines(x = ~Time,y = ~Prediction, stroke := "red")
-
-pv1 <- list(model = model.pv1, inputs.hour = inputs.hour, day = pv1.day, hour = pv1.hour, predictors = conf$predictors, targets.norm.params = targets.norm.params)
-pv2 <- list(model = model.pv2, inputs.hour = inputs.hour, day = pv2.day, hour = pv2.hour, predictors = conf$predictors, targets.norm.params = targets.norm.params)
-pv3 <- list(model = model.pv3, inputs.hour = inputs.hour, day = pv3.day, hour = pv3.hour, predictors = conf$predictors, targets.norm.params = targets.norm.params)
-
-train.set <- as.data.frame(cbind(inputs.hour[,conf$predictors], targets.hour[,"Energy_kWh"]))
-colnames(train.set) <- c(conf$predictors, "Energy_kWh")
-
-formula <- paste("Energy_kWh ~",paste(conf$predictors, collapse = " + "))
-
-model.pv1 <- neuralnet(formula,
-                data = train.set,
-                hidden = conf$size,
-                linear.output = T,
-                #learningrate.limit = 0.5,
-                #learningrate.factor = list(minus = 0.5, plus = 1.2),
-                #algorithm = 'backprop',
-                #learningrate = 0.01,
-                act.fct = 'logistic',
-                lifesign = 'full',
-                lifesign.step = 500,
-                threshold = 0.05
-                #stepmax = 3000
-)
-
-pv1.hour$daynight <- ifelse(pv1.hour$daynight == "night", F, T)
-pv2.hour$daynight <- ifelse(pv2.hour$daynight == "night", F, T)
-pv3.hour$daynight <- ifelse(pv3.hour$daynight == "night", F, T)
-
-
-hour.inputs <- inputs.hour[as.Date(inputs.hour$Time) == pv1$day$Time[29], conf$predictors]
-targets.hour[as.Date(targets.hour$Time) == pv1$day$Time[29], "Energy_kWh"]
-predict(model.pv1, hour.inputs)
-model <- pv1$model
