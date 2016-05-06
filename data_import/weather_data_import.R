@@ -1,6 +1,6 @@
 library(dplyr)
 
-import <- function(path){
+weather.import <- function(path){
   file.names <- list.files(path = path, full.names = T)
   df.list <- lapply(file.names, read.csv, header = F, sep = ",", dec =".", stringsAsFactors = F)
   df <- bind_rows(df.list)
@@ -12,9 +12,3 @@ import <- function(path){
   df <- arrange(df, Time)
   return (df)
 }
-
-
-#----------------Client Code-----------------------
-
-weather1.df <- import("./data/pocasie/oblast1")
-weather2.df <- import("./data/pocasie/oblast2")

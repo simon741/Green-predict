@@ -2,22 +2,22 @@ library(shiny)
 library(ggvis)
 library(RSNNS)
 
-load("model_pv1.RData")
+load("../model_pv1.RData")
 pv1.model <- model
 pv1.targets.norm.params <- targets.norm.params
 pv1.inputs.hour <- inputs.hour
 
-load("model_pv2.RData")
+load("../model_pv2.RData")
 pv2.model <- model 
 pv2.targets.norm.params <- targets.norm.params
 pv2.inputs.hour <- inputs.hour
 
-load("model_pv3.RData")
+load("../model_pv3.RData")
 pv3.model <- model 
 pv3.targets.norm.params <- targets.norm.params
 pv3.inputs.hour <- inputs.hour
 
-load("data_sets.RData")
+load("../data_sets.RData")
 
 source("helpers.R")
 
@@ -103,14 +103,18 @@ shinyServer(function(input, output, session) {
     predictions[predictions < 0] <- 0
     times <- inputs.hour[as.Date(inputs.hour$Time) == date,]$Time
     
-    result.df <- data.frame(id = 1:length(times), Time = times, Prediction = predictions, Real = real)
+    result.df <- data.frame(id = 1:length(times), Time = times, Prediction = predictions, Real = real,
+                            GHI = pv.hour[as.Date(pv.hour$Time) == date,]$GHI,
+                            Temperature = pv.hour[as.Date(pv.hour$Time) == date,]$Temperature,
+                            Cloudiness = pv.hour[as.Date(pv.hour$Time) == date,]$Cloudiness,
+                            Relative.humidity = pv.hour[as.Date(pv.hour$Time) == date,]$Relative.humidity)
 
     predicted.day.generation(result.df)
     result.df
   })
 
   all_values <- function(x) {
-    if(is.null(x$id)) return(NULL)
+    if(is.null(x)) return(NULL)
     predictions <- predicted.hour.generation()
     row = predictions[predictions$id == x$id, ]
     
@@ -126,7 +130,12 @@ shinyServer(function(input, output, session) {
       real <- round(row$Real, 2)
       text <- paste0(text,"Skutočnosť: ", real, " kWh <br />")
     }
-    text <- paste0(text,"</strong>")
+    text <- paste0(text,"<strong>",
+                   "GHO: ",row$GHI," W/m2 <br />",
+                   "Teplota: ",row$Temperature," C <br />",
+                   "Oblačnosť: ",row$Cloudiness," % <br />",
+                   "Relatívna vlhkosť: ",row$Relative.humidity," % <br />",
+                   "</strong>")
   }
   
   plot.prediction <- reactive({  
@@ -137,7 +146,7 @@ shinyServer(function(input, output, session) {
         plot <- predictions %>% 
         ggvis( ~Time, ~Prediction, key := ~id) %>% 
         scale_nominal("fill", range = c("black","red"))  %>%
-        scale_nominal("stroke", range = c("black","red")) %>% #,domain[length(domain)])
+        scale_nominal("stroke", range = c("black","red")) %>% 
         add_axis("x", title = "Čas(UTC)",
                  properties=axis_props(title=list(fontSize = 15))) %>%
         add_axis("y", title = "Energia (kWh)", title_offset = 45,

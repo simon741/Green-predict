@@ -6,7 +6,7 @@ change.timezone <- function(df,tz){
   return (df)
 }
 
-add.missing.timestamps <- function(pv.df){
+add.missing.timestamps.day <- function(pv.df){
   prev.Time <- pv.df$Time[1]
   size <- dim(pv.df)[1]
   one.day <- 1
@@ -25,7 +25,7 @@ add.missing.timestamps <- function(pv.df){
 compute.day.energy.generation <- function(pv.df){
   pv.df <- filter(pv.df, format(Time, format = "%H:%M", tz="GMT") == "00:00")
   pv.df <- mutate(pv.df, Time = as.Date(Time))
-  pv.df <- add.missing.timestamps(pv.df)
+  pv.df <- add.missing.timestamps.day(pv.df)
   
   prev.row <- pv.df[1,]
   size <- dim(pv.df)[1]
@@ -41,7 +41,7 @@ compute.day.energy.generation <- function(pv.df){
   return (new.pv.df)
 }
 
-compute.avrage.weather.parametres <- function(weather.df){
+compute.average.day.weather <- function(weather.df){
   weather.df <- mutate(weather.df, Time = as.Date(Time))
   weather.df <- rename(weather.df, Time = Time)
   weather.df <- group_by(weather.df, Time) %>%
@@ -52,12 +52,12 @@ compute.avrage.weather.parametres <- function(weather.df){
   return (weather.df)
 }
 
-pv.weather.merge <- function(pv.df,weather.df){
+pv.weather.merge.day <- function(pv.df,weather.df){
   pv.df <- change.timezone(pv.df,"GMT")
   pv.df <- compute.day.energy.generation(pv.df)
   
 
-  weather.df <- compute.avrage.weather.parametres(weather.df)
+  weather.df <- compute.average.day.weather(weather.df)
   pv.df$Energy_kWh[pv.df$Energy_kWh < 0] <- NA
   
   start.Time <- if(pv.df$Time[1] > weather.df$Time[1]) pv.df$Time[1] else weather.df$Time[1]
@@ -75,17 +75,3 @@ add.yesterday.generation <- function(pv.df){
   pv.df <- mutate(pv.df, Energy_kWh_yesterday = yesterday)
   return(pv.df)
 }
-
-#----------------Client Code-----------------------
-
-pv1.1.day.df <- pv.weather.merge (pv1.1.df, weather1.df)
-pv1.2.day.df  <- pv.weather.merge (pv1.2.df, weather1.df)
-pv2.day.df  <- pv.weather.merge (pv2.df, weather2.df)
-
-pv1.1.day.df <- add.yesterday.generation(pv1.1.day.df)
-pv1.2.day.df <- add.yesterday.generation(pv1.2.day.df)
-pv2.day.df <- add.yesterday.generation(pv2.day.df)
-
-pv1.day <- filter(pv1.1.day.df, !is.na(Energy_kWh), !is.na(Energy_kWh_yesterday))
-pv2.day <- filter(pv1.2.day.df, !is.na(Energy_kWh), !is.na(Energy_kWh_yesterday))
-pv3.day <- filter(pv2.day.df, !is.na(Energy_kWh), !is.na(Energy_kWh_yesterday))

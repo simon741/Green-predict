@@ -10,5 +10,3 @@ pv.vis <- function(pv, parametres){
       print(vis)
   }
 }
-
-pv.vis(pv3.hour, weather.parameters)

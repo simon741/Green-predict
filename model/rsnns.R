@@ -17,8 +17,9 @@ day.error.vis <- function(result){
   print(vis)
 }
 
-
 rsns.crossval <- function(conf, inputs.hour, targets.hour, folds){
+    
+    print("***************Hour predictions*****************")
   
     validation.errors <- data.frame()
     train.errors <- data.frame()
@@ -59,9 +60,9 @@ rsns.crossval <- function(conf, inputs.hour, targets.hour, folds){
      print(paste("RMAE: ",validation.error$RMAE,"%"))
      print(paste("RMSE: ",validation.error$RMSE))
      print(paste("RRMSE: ",validation.error$RRMSE,"%"))
-     
+     cat("\n")
   }
-  print("**********************************************")
+  print("***********HOUR final result***************************")
   print("Final result:")
   print("Train set errors:")
   print(paste("MAE: ",mean(train.errors$MAE)))
@@ -73,10 +74,12 @@ rsns.crossval <- function(conf, inputs.hour, targets.hour, folds){
   print(paste("RMAE: ",mean(validation.errors$RMAE),"%"))
   print(paste("RMSE: ",mean(validation.errors$RMSE)))
   print(paste("RRMSE: ",mean(validation.errors$RRMSE),"%"))
-  return (model)
+  cat("\n")
 }
 
 rsns.crossval.sum.hours <- function(conf, inputs.hour, targets.hour, targets.day, folds, targets.norm.params, vis.errors){
+  
+  print("***************Day predictions*****************")
   
   validation.errors <- data.frame()
   train.errors <- data.frame()
@@ -108,6 +111,7 @@ rsns.crossval.sum.hours <- function(conf, inputs.hour, targets.hour, targets.day
     print(paste("RMAE: ",validation.error$RMAE,"%"))
     print(paste("RMSE: ",validation.error$RMSE))
     print(paste("RRMSE: ",validation.error$RRMSE,"%"))
+    cat("\n")
     
   }
   print("**********************************************")
@@ -116,8 +120,7 @@ rsns.crossval.sum.hours <- function(conf, inputs.hour, targets.hour, targets.day
   print(paste("RMAE: ",mean(validation.errors$RMAE),"%"))
   print(paste("RMSE: ",mean(validation.errors$RMSE)))
   print(paste("RRMSE: ",mean(validation.errors$RRMSE),"%"))
-  
-  return (model)
+  cat("\n")
 }
 
 sum.hour.predictions <- function(target, model, inputs.test, predictors, targets.norm.params){
@@ -229,7 +232,7 @@ rsns.crossval2 <- function(inputs.day, inputs.hour, targets.day, targets.hour, c
 
 test.confs <- function(pv.hour, pv.day, num.folds, confs, output.to.file, day.error.vis){
   if(output.to.file == T){
-    sink(file = "final_test.txt", append = TRUE, type = "output",
+    sink(file = "test_results.txt", append = TRUE, type = "output",
          split = FALSE)
   }
   
@@ -247,11 +250,8 @@ test.confs <- function(pv.hour, pv.day, num.folds, confs, output.to.file, day.er
     
     print(deparse(substitute(pv.hour)))
     print(conf)
-    print("***************DAY*****************")
     
     model <- rsns.crossval.sum.hours(conf, inputs.hour, targets.hour, targets.day, day.folds, targets.norm.params, day.error.vis)
-    
-    print("***************HOUR*****************")
     
     model <- rsns.crossval(conf,inputs.hour, targets.hour, hour.folds)
   } 
@@ -261,7 +261,7 @@ test.confs <- function(pv.hour, pv.day, num.folds, confs, output.to.file, day.er
 
 test.day.mean.parametres <- function(pv.day, num.folds, conf, output.to.file, day.error.vis){
   if(output.to.file == T){
-    sink(file = "final_test.txt", append = TRUE, type = "output",
+    sink(file = "test_results.txt", append = TRUE, type = "output",
          split = FALSE)
   }
   
@@ -273,9 +273,8 @@ test.day.mean.parametres <- function(pv.day, num.folds, conf, output.to.file, da
   
   print(deparse(substitute(pv.day)))
   print(conf)
-  print("***************DAY*****************")
+  print("***************Day predictions*****************")
   model <- rsns.crossval(conf,inputs.day, targets.day, folds)
-  
   
   closeAllConnections()
 }
@@ -320,12 +319,5 @@ export.model <- function(pv.hour, pv.day, conf, pv.name){
   print(paste("RRMSE: ",train.error.day$RRMSE,"%"))
   
   
-  save(list = c("model", "predictors", "targets.norm.params", "inputs.hour"),file = paste0("./green_predict_app/model_", pv.name,".RData"))
+  save(list = c("model", "predictors", "targets.norm.params", "inputs.hour"),file = paste0("../model_", pv.name,".RData"))
 }
-
-  vis <- result %>% ggvis(x = ~Prediction, y= ~Target) %>% 
-    layer_points(size = ~dif) %>% 
-    layer_lines(~Target,~Target) %>%
-    add_axis("x", title = "Predikovana hodnota") %>%
-    add_axis("y", title = "Cielova hodnota") %>%
-    add_legend("fill", title = "Chyba")

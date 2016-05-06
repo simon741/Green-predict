@@ -3,6 +3,7 @@ library(MASS)
 lm.crossval <- function(inputs.hour, targets.hour, folds, predictors){
   validation.errors <- data.frame()
   train.errors <- data.frame()
+  print("***************Hour predictions*****************")
   for(i in 1:folds$K){
     inputs.train <- inputs.hour[folds$which != i,predictors]
     inputs.validation <- inputs.hour[folds$which == i,predictors]
@@ -28,7 +29,7 @@ lm.crossval <- function(inputs.hour, targets.hour, folds, predictors){
     print(paste("RMAE: ",validation.error$RMAE,"%"))
     print(paste("RMSE: ",validation.error$RMSE))
     print(paste("RRMSE: ",validation.error$RRMSE,"%"))
-    
+    cat("\n")
   }
   print("**********************************************")
   print("Final result:")
@@ -37,8 +38,8 @@ lm.crossval <- function(inputs.hour, targets.hour, folds, predictors){
   print(paste("RMAE: ",mean(validation.errors$RMAE),"%"))
   print(paste("RMSE: ",mean(validation.errors$RMSE)))
   print(paste("RRMSE: ",mean(validation.errors$RRMSE),"%"))
+  cat("\n")
   print(summary(model))
-  return (model)
 }
 
 
@@ -57,7 +58,7 @@ test.lin.model <- function(pv.hour, num.folds, output.to.file){
   
   print(deparse(substitute(pv.hour)))
   print("linear model")
-  print("***************HOUR*****************")
+
   lm.crossval(inputs.hour, targets.hour, folds, predictors)
   
   closeAllConnections()
