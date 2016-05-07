@@ -1,5 +1,6 @@
 library(dplyr)
 library(insol)
+
 change.timezone <- function(df,tz){
   attributes(df$Time)$tzone <- tz
   df <- arrange(df, Time)
@@ -90,6 +91,12 @@ add.sun.position <- function(pv.df, latitude, longitude){
   return(pv.df)
 }
 
+add.day.length <- function(pv.df, latitude, longitude){
+  day.length <- daylength(latitude,longitude,JD(pv.df$Time),0)[,3]
+  pv.df <- mutate(pv.df, day_length = day.length)
+  return(pv.df)
+}
+
 add.daynight.flag <- function(pv.df, latitude, longitude){
   day <- daylength(latitude, longitude, JD(pv.df$Time) ,0)
   sunrise <- day[,1]
@@ -168,4 +175,9 @@ add.yesterday.generation <- function(pv.df){
   pv.df <- pv.df[-1,]
   pv.df <- mutate(pv.df, Energy_kWh_yesterday = yesterday)
   return(pv.df)
+}
+
+export.data.sets <-function(){
+  save(list = c("pv1.hour", "pv1.day", "pv2.hour", "pv2.day", "pv3.hour", "pv3.day", "pv3.hour.no.night", "pv2.hour.no.night", "pv1.hour.no.night"),
+       file = "../data_sets.RData")
 }

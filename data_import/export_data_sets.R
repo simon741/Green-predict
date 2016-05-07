@@ -2,12 +2,6 @@ library(dplyr)
 library(ggvis)
 library(insol)
 
-
-export.data.sets <-function(){
-  save(list = c("pv1.hour", "pv1.day", "pv2.hour", "pv2.day", "pv3.hour", "pv3.day", "pv3.hour.no.night", "pv2.hour.no.night", "pv1.hour.no.night"),
-       file = "../data_sets.RData")
-}
-
 #----------------Client Code-----------------------
 
 #nejako to este oddelit??????????????
@@ -38,6 +32,10 @@ pv2.hour.df <- add.daynight.flag(pv2.hour.df,0, 0)
 pv1.1.hour.df <- add.sun.position (pv1.1.hour.df,0, 0)
 pv1.2.hour.df <- add.sun.position (pv1.2.hour.df,0, 0)
 pv2.hour.df <- add.sun.position (pv2.hour.df,0, 0)
+
+pv1.1.hour.df <- add.day.length(pv1.1.hour.df, 0, 0)
+pv1.2.hour.df <- add.day.length(pv1.2.hour.df, 0, 0)
+pv2.hour.df <- add.day.length(pv2.hour.df, 0, 0)
 
 pv1.1.hour.df <- compute.average.3hour.weather(pv1.1.hour.df, weather.parameters)
 pv1.2.hour.df <- compute.average.3hour.weather(pv1.2.hour.df, weather.parameters)
@@ -71,8 +69,6 @@ pv2.day.df <- add.yesterday.generation(pv2.day.df)
 pv1.day <- filter(pv1.1.day.df, !is.na(Energy_kWh), !is.na(Energy_kWh_yesterday))
 pv2.day <- filter(pv1.2.day.df, !is.na(Energy_kWh), !is.na(Energy_kWh_yesterday))
 pv3.day <- filter(pv2.day.df, !is.na(Energy_kWh), !is.na(Energy_kWh_yesterday))
-
-pv.vis(pv3.hour, weather.parameters) #??????????
 
 export.data.sets()
 
