@@ -3,5 +3,5 @@
 *.RData
 *.txt
 .Rproj.user
-test.R
+*.dcf
 *.csv

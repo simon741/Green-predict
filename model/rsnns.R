@@ -20,7 +20,6 @@ day.error.vis <- function(result){
 rsns.crossval <- function(conf, inputs.hour, targets.hour, folds){
     
     print("***************Hour predictions*****************")
-  
     validation.errors <- data.frame()
     train.errors <- data.frame()
     for(i in 1:folds$K){
@@ -147,88 +146,6 @@ normalize <- function(pv, predictors){
                           targets.norm.params = targets.norm.params)
   return (normalized.data)
 }
-
-rsns.crossval2 <- function(inputs.day, inputs.hour, targets.day, targets.hour, conf, predictors, num.folds){
-  
-  test.errors <- data.frame()
-  train.errors <- data.frame()
-  for(i in 1:num.folds){
-    print(paste("Crossvalidation iteration: ", i))
-    inputs.train <- inputs.hour[as.Date(inputs.hour$Time) %in% inputs.day$Time[folds$which != i],]
-    inputs.test <- inputs.hour[as.Date(inputs.hour$Time) %in% inputs.day$Time[folds$which == i],]
-    targets.train <- targets.hour[as.Date(inputs.hour$Time) %in% inputs.day$Time[folds$which != i],]
-    targets.test.hour <- targets.day[as.Date(inputs.hour$Time) %in% inputs.day$Time[folds$which == i],]
-    targets.test.day <- targets.day[folds$which == i,]
-
-    
-    inputs.train <- inputs.train[,predictors]
-    targets.train <- targets.train[,"Energy_kWh"]
-    targets.test.hour <- targets.test.hour[,"Energy_kWh"]
-    
-    model <- SnnsRObjectFactory()
-    model$setLearnFunc('Rprop')
-    model$setUpdateFunc('Topological_Order')
-    model$setUnitDefaults(1,0,1,0,1,'Act_Logistic','Out_Identity')
-    model$createNet(c(ncol(inputs.train),conf$size,1), TRUE)
-    train.patset <- model$createPatSet(inputs.train, targets.train)
-    validation.patset <- model$createPatSet(inputs.test[,predictors], targets.test.hour)
-    
-  
-    model$shufflePatterns(conf$shufflePatterns)
-    model$initializeNet(conf$initFuncParams,"Randomize_Weights")
-    
-    model$saveNet(paste(basePath,"neuronka.net",sep=""),
-                       "neuronka.net")
-    for(j in 1:50){
-      model$setCurrPatSet(train.patset$set_no)
-      model$DefTrainSubPat()
-      for(k in 1:300) {
-        res <- model$learnAllPatterns(conf$learnFuncParams)
-      }
-      print(paste("Epoch number: ",j*300))
-      print("Train set errors:")
-      print(res[[2]])
-      
-      model$setCurrPatSet(validation.patset$set_no)
-      model$DefTrainSubPat()
-      res <- model$testAllPatterns(c(0))
-      #validation.predictions <- model$predictCurrPatSet("output", c(0))
-     # validation.error <- modeval(validation.predictions,targets.test.hour,
-      #                           stat=c("MAE","RMAE","RMSE","RRMSE"))
-    
-      print("Validation set errors:")
-      print(res[[2]])
-     # print(paste("RMSE: ",validation.error$RMSE))
-
-      print("------------------------------------------------")
-    }
-
-
-#     
-#     test.predictions <- apply(targets.test.day,1,sum.hour.predictions, model = model,inputs.test = inputs.test, predictors = predictors)
-#     test.predictions <- normalizeData(test.predictions, type = "0_1")
-#     test.error <- modeval(test.predictions,targets.test.day$Energy_kWh,
-#                           stat=c("MAE","RMAE","RMSE","RRMSE"))
-#     test.errors <- rbind(test.errors, test.error)
-    
-
-
-    
-    #toto pojde asi prec az nakoniec sa to bude pocitat na testovacej mnozine
-#     print("Day agregation test set errors:")
-#     print(paste("MAE: ",test.error$MAE))
-#     print(paste("RMSE: ",test.error$RMSE))
-#     print(paste("RMAE: ",test.error$RMAE,"%"))
-#     print(paste("RRMSE: ",test.error$RRMSE,"%"))
-#     print("------------------------------------------------")
-  }
-  print("Final result:")
-  print(paste("MAE: ",mean(test.errors$MAE)))
-  print(paste("RMAE: ",mean(test.errors$RMAE),"%"))
-  print(paste("RMSE: ",mean(test.errors$RMSE)))
-  print(paste("RRMSE: ",mean(test.errors$RRMSE),"%"))
-}
-
 
 test.confs <- function(pv.hour, pv.day, num.folds, confs, output.to.file, day.error.vis){
   if(output.to.file == T){

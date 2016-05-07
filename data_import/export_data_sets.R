@@ -10,6 +10,7 @@ export.data.sets <-function(){
 
 #----------------Client Code-----------------------
 
+#nejako to este oddelit??????????????
 
 weather1.df <- weather.import("../original_data/pocasie/oblast1")
 weather2.df <- weather.import("../original_data/pocasie/oblast2")
