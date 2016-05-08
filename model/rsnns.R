@@ -6,14 +6,27 @@ library(ggvis)
 
 day.error.vis <- function(result){
   result <- data.frame(result, Dif = abs(result$Target - result$Prediction))
-  result <- mutate(result, order = seq(1,dim(result)[1],1))
+  result <- mutate(result, Time = as.numeric(format(Time, format = "%m", tz="GMT")))
   
+  result$Time[result$Time %in% c(12,1,2)] <- "Zima"
+  result$Time[result$Time %in% c(3,4,5)] <- "Jar"
+  result$Time[result$Time %in% c(6,7,8)] <- "Leto"
+  result$Time[result$Time %in% c(9,10,11)] <- "Jesen"
+  
+  result$Time <- factor(result$Time, levels = c("Zima","Jesen","Jar","Leto"))
+  
+  print(result)
   vis <- result %>% ggvis(x = ~Prediction, y= ~Target) %>% 
     layer_points(size = ~Dif, fill = ~Time) %>% 
     layer_lines(~Target,~Target) %>%
-    add_axis("x", title = "Predikovana hodnota") %>%
-    add_axis("y", title = "Cielova hodnota") %>%
-    add_legend("fill", title = "Chyba")
+    add_axis("x", title = "Predikovana hodnota energie (kWh)",
+             title_offset = 45,
+             properties=axis_props(title=list(fontSize = 15))) %>%
+    add_axis("y", title = "Cielova hodnota energie (kWh)",
+             title_offset = 45,
+             properties=axis_props(title=list(fontSize = 15))) %>%
+    add_legend("fill", title = "Rocne obdobie") %>%
+    add_legend("size", title = "Chyba (kWh)", properties = legend_props(legend = list(y = 100)))
   print(vis)
 }
 
@@ -33,7 +46,7 @@ rsns.crossval <- function(conf, inputs.hour, targets.hour, folds){
                  initFunc = "Randomize_Weights",
                  learnFunc = conf$learnFunc,
                  updateFunc = "Topological_Order", updateFuncParams = c(0),
-                 hiddenActFunc = "Act_Logistic", shufflePatterns = conf$shufflePatterns,
+                 hiddenActFunc = "Act_Logistic", shufflePatterns = T,
                  linOut = T)
     
     train.predictions <- predict(model,inputs.train[,conf$predictors])
@@ -61,7 +74,7 @@ rsns.crossval <- function(conf, inputs.hour, targets.hour, folds){
      print(paste("RRMSE: ",validation.error$RRMSE,"%"))
      cat("\n")
   }
-  print("***********HOUR final result***************************")
+  print("**************************************")
   print("Final result:")
   print("Train set errors:")
   print(paste("MAE: ",mean(train.errors$MAE)))
@@ -82,6 +95,7 @@ rsns.crossval.sum.hours <- function(conf, inputs.hour, targets.hour, targets.day
   
   validation.errors <- data.frame()
   train.errors <- data.frame()
+  results <- data.frame()
   for(i in 1:folds$K){
     
     inputs.train <- inputs.hour[as.Date(inputs.hour$Time) %in% targets.day$Time[folds$which != i],conf$predictors]
@@ -93,7 +107,7 @@ rsns.crossval.sum.hours <- function(conf, inputs.hour, targets.hour, targets.day
                  initFunc = "Randomize_Weights",
                  learnFunc = conf$learnFunc,
                  updateFunc = "Topological_Order", updateFuncParams = c(0),
-                 hiddenActFunc = "Act_Logistic", shufflePatterns = conf$shufflePatterns,
+                 hiddenActFunc = "Act_Logistic", shufflePatterns = T,
                  linOut = T)
 
     validation.predictions <- apply(targets.validation,1,sum.hour.predictions, model = model,inputs.test = inputs.hour, predictors = conf$predictors, targets.norm.params)
@@ -101,8 +115,9 @@ rsns.crossval.sum.hours <- function(conf, inputs.hour, targets.hour, targets.day
                           stat=c("MAE","RMAE","RMSE","RRMSE"))
     validation.errors <- rbind(validation.errors, validation.error)
     result <- data.frame(Time = targets.validation$Time, Target = targets.validation$Energy_kWh, Prediction = validation.predictions)
+    results <- rbind(result,results)
     
-    if(vis.errors == T) error.vis(result)
+    if(vis.errors == T) day.error.vis(result)
     
     print(paste("Crossvalidation iteration: ", i))
     print("Validation set errors:")
@@ -114,12 +129,14 @@ rsns.crossval.sum.hours <- function(conf, inputs.hour, targets.hour, targets.day
     
   }
   print("**********************************************")
-  print("Final day agregation result:")
+  print("Final result:")
+  print("Validation set errors:")
   print(paste("MAE: ",mean(validation.errors$MAE)))
   print(paste("RMAE: ",mean(validation.errors$RMAE),"%"))
   print(paste("RMSE: ",mean(validation.errors$RMSE)))
   print(paste("RRMSE: ",mean(validation.errors$RRMSE),"%"))
   cat("\n")
+  if(vis.errors == T) day.error.vis(results)
 }
 
 sum.hour.predictions <- function(target, model, inputs.test, predictors, targets.norm.params){
@@ -168,9 +185,9 @@ test.confs <- function(pv.hour, pv.day, num.folds, confs, output.to.file, day.er
     print(deparse(substitute(pv.hour)))
     print(conf)
     
-    model <- rsns.crossval.sum.hours(conf, inputs.hour, targets.hour, targets.day, day.folds, targets.norm.params, day.error.vis)
+    rsns.crossval.sum.hours(conf, inputs.hour, targets.hour, targets.day, day.folds, targets.norm.params, day.error.vis)
     
-    model <- rsns.crossval(conf,inputs.hour, targets.hour, hour.folds)
+    rsns.crossval(conf,inputs.hour, targets.hour, hour.folds)
   } 
   
   closeAllConnections()
@@ -210,7 +227,7 @@ export.model <- function(pv.hour, pv.day, conf, pv.name){
                 initFunc = "Randomize_Weights",
                 learnFunc = conf$learnFunc,
                 updateFunc = "Topological_Order", updateFuncParams = c(0),
-                hiddenActFunc = "Act_Logistic", shufflePatterns = conf$shufflePatterns,
+                hiddenActFunc = "Act_Logistic", shufflePatterns = T,
                 linOut = T)
   
   train.predictions.day <- apply(targets.day,1,sum.hour.predictions, model,inputs.test = inputs.hour, predictors = conf$predictors, targets.norm.params)

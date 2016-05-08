@@ -15,7 +15,7 @@ lm.crossval <- function(inputs.hour, targets.hour, folds, predictors){
     colnames(train.set) <- c("Energy_kWh", predictors)
     colnames(validation.set) <- c("Energy_kWh", predictors)
     
-    model <- rlm(Energy_kWh ~ poly(GHI,2) + poly(Temperature,2) + Energy_kWh_yesterday + poly(Relative.humidity,2) + poly(Cloudiness,2), data=pv3.hour)
+    model <- rlm(Energy_kWh ~ poly(GHI,6) + poly(Temperature,4), data=pv3.hour)
     
     validation.predictions <- predict(model,validation.set)
     validation.predictions[validation.predictions < 0] <- 0
@@ -46,10 +46,10 @@ lm.crossval <- function(inputs.hour, targets.hour, folds, predictors){
 test.lin.model <- function(pv.hour, num.folds, output.to.file){
   
   if(output.to.file == T){
-    sink(file = "final_test.txt", append = TRUE, type = "output",
+    sink(file = "test_results.txt", append = TRUE, type = "output",
          split = FALSE)
   }
-  predictors <- c("GHI","Temperature", "Energy_kWh_yesterday", "Relative.humidity", "Cloudiness")
+  predictors <- c("GHI", "Temperature")
   normalized.data <- normalize(pv.hour, predictors)
   targets.norm.params <- normalized.data$targets.norm.params
   inputs.hour <- normalized.data$inputs
