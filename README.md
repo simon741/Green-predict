@@ -10,7 +10,7 @@ Application works for now just with static historic data.
 
 Web site of the application: [https://simonsudora.shinyapps.io/green_predict_app/](https://simonsudora.shinyapps.io/green_predict_app/).
 
-[Presentation of my bechalor thesis]() focused on model results and accuracy.
+[Presentation of my bechalor thesis](http://www.slideshare.net/SimonSudora/prediction-of-electricity-generation-from-photovoltaic) (in Slovak) focused on model results and accuracy.
 
 You can find [the full text of my bachelor thesis](http://www.crzp.sk/crzpopacxe?fn=*recview&uid=1473090&pageId=resultform&full=0&focusName=bsktchRZ1#) 
 (in Slovak) in [CRZP](http://cms.crzp.sk/).
@@ -21,4 +21,4 @@ You can find [the full text of my bachelor thesis](http://www.crzp.sk/crzpopacxe
 
 ![model predictions a their visalization](http://i.imgur.com/lcFvC33.png "model predictions a their visalizations")
 
-*Note: I didn't use github versioning from the begging of the project*
+*Note: I didn't use github versioning from the begging of the project.*
