@@ -21,4 +21,4 @@ You can find [the full text of my bachelor thesis](http://www.crzp.sk/crzpopacxe
 
 ![model predictions a their visalization](http://i.imgur.com/lcFvC33.png "model predictions a their visalizations")
 
-*Note: I didn't use github versioning from the begging of project*
+*Note: I didn't use github versioning from the begging of the project*
