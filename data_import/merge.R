@@ -45,10 +45,20 @@ pv.weather.merge.hour <- function(pv.df,weather.df){
   pv.df <- add.missing.timestamps(pv.df)
   pv.df <- compute.hour.energy.generation(pv.df)
   pv.df$Energy_kWh[pv.df$Energy_kWh < 0] <- NA
-  start.time <- if(pv.df$Time[1] > weather.df$Time[1]) pv.df$Time[1] else weather.df$Time[1]
-  end.time <- if(tail(pv.df$Time,1) < tail(weather.df$Time,1)) tail(pv.df$Time,1) else tail(weather.df$Time, 1) 
+  
+  start.time <- if(pv.df$Time[1] > weather.df$Time[1]) 
+    pv.df$Time[1] 
+  else 
+    weather.df$Time[1]
+  
+  end.time <- if(tail(pv.df$Time,1) < tail(weather.df$Time,1)) 
+    tail(pv.df$Time,1) 
+  else 
+    tail(weather.df$Time, 1) 
+  
   weather.df <- filter(weather.df, Time >= start.time, Time <= end.time )
   pv.df <- filter(pv.df, Time >= start.time, Time <= end.time)
+  
   merged.df <- merge(pv.df, weather.df)
   return (merged.df)
 }
@@ -157,12 +167,19 @@ pv.weather.merge.day <- function(pv.df,weather.df){
   pv.df <- change.timezone(pv.df,"GMT")
   pv.df <- compute.day.energy.generation(pv.df)
   
-  
   weather.df <- compute.average.day.weather(weather.df)
   pv.df$Energy_kWh[pv.df$Energy_kWh < 0] <- NA
   
-  start.Time <- if(pv.df$Time[1] > weather.df$Time[1]) pv.df$Time[1] else weather.df$Time[1]
-  end.Time <- if(tail(pv.df$Time,1) < tail(weather.df$Time,1)) tail(pv.df$Time,1) else tail(weather.df$Time, 1) 
+  start.Time <- if(pv.df$Time[1] > weather.df$Time[1]) 
+    pv.df$Time[1] 
+  else 
+    weather.df$Time[1]
+  
+  end.Time <- if(tail(pv.df$Time,1) < tail(weather.df$Time,1)) 
+    tail(pv.df$Time,1) 
+  else 
+    tail(weather.df$Time, 1) 
+  
   weather.df <- filter(weather.df, Time >= start.Time, Time <= end.Time )
   pv.df <- filter(pv.df, Time >= start.Time, Time <= end.Time)
   merged.df <- merge(pv.df, weather.df)

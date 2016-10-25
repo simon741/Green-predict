@@ -14,8 +14,7 @@ day.error.vis <- function(result){
   result$Time[result$Time %in% c(9,10,11)] <- "Jesen"
   
   result$Time <- factor(result$Time, levels = c("Zima","Jesen","Jar","Leto"))
-  
-  print(result)
+
   vis <- result %>% ggvis(x = ~Prediction, y= ~Target) %>% 
     layer_points(size = ~Dif, fill = ~Time) %>% 
     layer_lines(~Target,~Target) %>%
@@ -198,7 +197,7 @@ test.day.mean.parametres <- function(pv.day, num.folds, conf, output.to.file, da
     sink(file = "test_results.txt", append = TRUE, type = "output",
          split = FALSE)
   }
-  
+  print(conf$predictors)
   normalized.data <- normalize(pv.day, conf$predictors)
   targets.norm.params <- normalized.data$targets.norm.params
   inputs.day <- normalized.data$inputs

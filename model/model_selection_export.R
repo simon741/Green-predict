@@ -3,6 +3,7 @@ library(dplyr)
 library(sirad)
 library(cvTools)
 library(ggvis)
+library(MASS)
 
 #------------Client Code----------------------------------
 
@@ -59,8 +60,8 @@ test.confs(pv2.hour, pv2.day, num.folds = 10 ,confs, output.to.file = T, day.err
 confs <- list(best.conf.FVE1)
 test.confs(pv1.hour, pv1.day, num.folds = 10 ,confs, output.to.file = T, day.error.vis = F)
 
-confs <- list(conf.for.mean.day.weather.parametres.FVE3)
-test.day.mean.parametres(pv3.day, num.folds = 10 ,conf9, output.to.file = T, day.error.vis = F)
+conf <- conf.for.mean.day.weather.parametres.FVE3
+test.day.mean.parametres(pv3.day, num.folds = 10 ,conf =conf, output.to.file = T, day.error.vis = F)
 
 test.lin.model(pv3.hour, num.folds = 10, output.to.file = F)
 
