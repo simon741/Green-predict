@@ -1,5 +1,6 @@
 library(dplyr)
 library(insol)
+
 change.timezone <- function(df,tz){
   attributes(df$Time)$tzone <- tz
   df <- arrange(df, Time)
@@ -44,10 +45,20 @@ pv.weather.merge.hour <- function(pv.df,weather.df){
   pv.df <- add.missing.timestamps(pv.df)
   pv.df <- compute.hour.energy.generation(pv.df)
   pv.df$Energy_kWh[pv.df$Energy_kWh < 0] <- NA
-  start.time <- if(pv.df$Time[1] > weather.df$Time[1]) pv.df$Time[1] else weather.df$Time[1]
-  end.time <- if(tail(pv.df$Time,1) < tail(weather.df$Time,1)) tail(pv.df$Time,1) else tail(weather.df$Time, 1) 
+  
+  start.time <- if(pv.df$Time[1] > weather.df$Time[1]) 
+    pv.df$Time[1] 
+  else 
+    weather.df$Time[1]
+  
+  end.time <- if(tail(pv.df$Time,1) < tail(weather.df$Time,1)) 
+    tail(pv.df$Time,1) 
+  else 
+    tail(weather.df$Time, 1) 
+  
   weather.df <- filter(weather.df, Time >= start.time, Time <= end.time )
   pv.df <- filter(pv.df, Time >= start.time, Time <= end.time)
+  
   merged.df <- merge(pv.df, weather.df)
   return (merged.df)
 }
@@ -87,6 +98,12 @@ add.yesterday.hour.generation <- function(pv.df){
 add.sun.position <- function(pv.df, latitude, longitude){
   sun.pos <- sunpos(sunvector(JD(pv.df$Time),latitude, longitude,0))
   pv.df <- mutate(pv.df, sun_azimuth = sun.pos[,1], sun_zenith = sun.pos[,2])
+  return(pv.df)
+}
+
+add.day.length <- function(pv.df, latitude, longitude){
+  day.length <- daylength(latitude,longitude,JD(pv.df$Time),0)[,3]
+  pv.df <- mutate(pv.df, day_length = day.length)
   return(pv.df)
 }
 
@@ -150,12 +167,19 @@ pv.weather.merge.day <- function(pv.df,weather.df){
   pv.df <- change.timezone(pv.df,"GMT")
   pv.df <- compute.day.energy.generation(pv.df)
   
-  
   weather.df <- compute.average.day.weather(weather.df)
   pv.df$Energy_kWh[pv.df$Energy_kWh < 0] <- NA
   
-  start.Time <- if(pv.df$Time[1] > weather.df$Time[1]) pv.df$Time[1] else weather.df$Time[1]
-  end.Time <- if(tail(pv.df$Time,1) < tail(weather.df$Time,1)) tail(pv.df$Time,1) else tail(weather.df$Time, 1) 
+  start.Time <- if(pv.df$Time[1] > weather.df$Time[1]) 
+    pv.df$Time[1] 
+  else 
+    weather.df$Time[1]
+  
+  end.Time <- if(tail(pv.df$Time,1) < tail(weather.df$Time,1)) 
+    tail(pv.df$Time,1) 
+  else 
+    tail(weather.df$Time, 1) 
+  
   weather.df <- filter(weather.df, Time >= start.Time, Time <= end.Time )
   pv.df <- filter(pv.df, Time >= start.Time, Time <= end.Time)
   merged.df <- merge(pv.df, weather.df)
@@ -168,4 +192,9 @@ add.yesterday.generation <- function(pv.df){
   pv.df <- pv.df[-1,]
   pv.df <- mutate(pv.df, Energy_kWh_yesterday = yesterday)
   return(pv.df)
+}
+
+export.data.sets <-function(){
+  save(list = c("pv1.hour", "pv1.day", "pv2.hour", "pv2.day", "pv3.hour", "pv3.day", "pv3.hour.no.night", "pv2.hour.no.night", "pv1.hour.no.night"),
+       file = "../data_sets.RData")
 }

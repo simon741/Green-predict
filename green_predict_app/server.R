@@ -2,22 +2,22 @@ library(shiny)
 library(ggvis)
 library(RSNNS)
 
-load("../model_pv1.RData")
+load("./model_pv1.RData")
 pv1.model <- model
 pv1.targets.norm.params <- targets.norm.params
 pv1.inputs.hour <- inputs.hour
 
-load("../model_pv2.RData")
+load("./model_pv2.RData")
 pv2.model <- model 
 pv2.targets.norm.params <- targets.norm.params
 pv2.inputs.hour <- inputs.hour
 
-load("../model_pv3.RData")
+load("./model_pv3.RData")
 pv3.model <- model 
 pv3.targets.norm.params <- targets.norm.params
 pv3.inputs.hour <- inputs.hour
 
-load("../data_sets.RData")
+load("./data_sets.RData")
 
 source("helpers.R")
 

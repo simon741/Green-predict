@@ -15,10 +15,14 @@ shinyUI(navbarPage(
                    pre model sú parametre predpovede počasia."),
                  
                  p("Aplikácia v súčasnosti ponúka vizualizáciu dát a predikciu na historických dátach. 
-                   Predikciu je možné porovnať aj so skutčnými hodnotami. Uvedená funkcionalita beží na troch
+                   Predikciu je možné porovnať aj so skutčnými hodnotami.Uvedená funkcionalita beží na troch
                    data setoch (3 elektrárne), pričom každý data set má vlastný predikčný model."),
                  
+                 p("Model v súčasnosti pracuje iba s dátami, ktoré pozná. Ak by mal pracovať s reálnymi dátami,
+                   jeho presnosť by bola menšia"),
+                 
                  style = "font-size: 17px;"
+
                )
              )
            )

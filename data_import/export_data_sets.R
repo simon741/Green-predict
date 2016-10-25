@@ -2,14 +2,7 @@ library(dplyr)
 library(ggvis)
 library(insol)
 
-
-export.data.sets <-function(){
-  save(list = c("pv1.hour", "pv1.day", "pv2.hour", "pv2.day", "pv3.hour", "pv3.day", "pv3.hour.no.night", "pv2.hour.no.night", "pv1.hour.no.night"),
-       file = "../data_sets.RData")
-}
-
 #----------------Client Code-----------------------
-
 
 weather1.df <- weather.import("../original_data/pocasie/oblast1")
 weather2.df <- weather.import("../original_data/pocasie/oblast2")
@@ -38,6 +31,10 @@ pv1.1.hour.df <- add.sun.position (pv1.1.hour.df,0, 0)
 pv1.2.hour.df <- add.sun.position (pv1.2.hour.df,0, 0)
 pv2.hour.df <- add.sun.position (pv2.hour.df,0, 0)
 
+pv1.1.hour.df <- add.day.length(pv1.1.hour.df, 0, 0)
+pv1.2.hour.df <- add.day.length(pv1.2.hour.df, 0, 0)
+pv2.hour.df <- add.day.length(pv2.hour.df, 0, 0)
+
 pv1.1.hour.df <- compute.average.3hour.weather(pv1.1.hour.df, weather.parameters)
 pv1.2.hour.df <- compute.average.3hour.weather(pv1.2.hour.df, weather.parameters)
 pv2.hour.df <- compute.average.3hour.weather(pv2.hour.df, weather.parameters)
@@ -59,6 +56,7 @@ pv2.hour$daynight <- ifelse(pv2.hour$daynight == "night", F, T)
 pv3.hour$daynight <- ifelse(pv3.hour$daynight == "night", F, T)
 
 #------------------pv and weather merge (agregated day observations)------------------
+
 pv1.1.day.df <- pv.weather.merge.day(pv1.1.df, weather1.df)
 pv1.2.day.df  <- pv.weather.merge.day(pv1.2.df, weather1.df)
 pv2.day.df  <- pv.weather.merge.day(pv2.df, weather2.df)
@@ -71,18 +69,4 @@ pv1.day <- filter(pv1.1.day.df, !is.na(Energy_kWh), !is.na(Energy_kWh_yesterday)
 pv2.day <- filter(pv1.2.day.df, !is.na(Energy_kWh), !is.na(Energy_kWh_yesterday))
 pv3.day <- filter(pv2.day.df, !is.na(Energy_kWh), !is.na(Energy_kWh_yesterday))
 
-pv.vis(pv3.hour, weather.parameters) #??????????
-
 export.data.sets()
-
-
-#----------------------------------------------------------------
-
-pv.data.error.rate <- function(pv.df){
-  error.rate <- dim(pv.df %>% filter(is.na(Energy_kWh)|is.na(Power_kW)))[1] / dim(pv.df)[1] * 100
-  print(error.rate)
-}
-
-pv.data.error.rate(df1)
-pv.data.error.rate(df2)
-pv.data.error.rate(df3)
