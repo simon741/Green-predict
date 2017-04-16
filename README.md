@@ -12,7 +12,7 @@ Web site of the application: [https://simonsudora.shinyapps.io/green_predict_app
 
 [Presentation of my bechalor thesis](http://www.slideshare.net/SimonSudora/prediction-of-electricity-generation-from-photovoltaic) (in Slovak) focused on model results and accuracy.
 
-You can find [the full text of my bachelor thesis](http://www.crzp.sk/crzpopacxe?fn=*recview&uid=1473090&pageId=resultform&full=0&focusName=bsktchRZ1#) 
+You can find [the full text of my bachelor thesis](http://opac.crzp.sk/?fn=detailBiblioForm&sid=B0ECE52FE577B8B951C262E96922) 
 (in Slovak) in [CRZP](http://cms.crzp.sk/).
 
 
